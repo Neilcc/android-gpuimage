@@ -1,4 +1,5 @@
 apply plugin: 'com.android.library'
+apply plugin: 'com.jakewharton.hugo'
 
 android {
     compileSdkVersion COMPILE_SDK_VERSION as int
@@ -10,11 +11,24 @@ android {
         versionCode = VERSION_CODE as int
         versionName = VERSION_NAME
         externalNativeBuild {
-            cmake { cppFlags "" }
+            cmake {
+                cppFlags "-std=c++11 -fpermissive -frtti -fexceptions"
+                arguments '-DANDROID_PLATFORM=android-18',
+                        '-DANDROID_TOOLCHAIN=clang',
+                        '-DANDROID_ABI=armeabi-v7a',
+                        '-DCMAKE_BUILD_TYPE=Release',
+                        '-DANDROID_ARM_NEON=ON',
+                        "-DANDROID_STL=c++_shared"
+            }
+        }
+        ndk {
+            abiFilters 'armeabi-v7a'
         }
     }
     externalNativeBuild {
-        cmake { path "src/main/cpp/CMakeLists.txt" }
+        cmake {
+            path "src/main/cpp/CMakeLists.txt"
+        }
     }
 
     buildTypes {

@@ -2,6 +2,7 @@
 
 #include <android/bitmap.h>
 #include <GLES2/gl2.h>
+#include "yuv2rgb.h"
 
 
 JNIEXPORT void JNICALL
@@ -125,7 +126,7 @@ Java_jp_co_cyberagent_android_gpuimage_GPUImageNativeLibrary_YUVtoARBG(JNIEnv *e
 
 JNIEXPORT void JNICALL
 Java_jp_co_cyberagent_android_gpuimage_GPUImageNativeLibrary_adjustBitmap(JNIEnv *jenv, jclass thiz,
-                                                                       jobject src) {
+                                                                          jobject src) {
     unsigned char *srcByteBuffer;
     int result = 0;
     int i, j;
@@ -156,3 +157,20 @@ Java_jp_co_cyberagent_android_gpuimage_GPUImageNativeLibrary_adjustBitmap(JNIEnv
     }
     AndroidBitmap_unlockPixels(jenv, src);
 }
+
+JNIEXPORT void JNICALL
+Java_jp_co_cyberagent_android_gpuimage_GPUImageNativeLibrary_YUVtoRGBANEON(JNIEnv *env,
+                                                                            jobject obj,
+                                                                            jbyteArray yuv420sp,
+                                                                            jint width, jint height,
+                                                                            jintArray rgbOut) {
+    jint *rgbData = (jint *) ((*env)->GetPrimitiveArrayCritical(env, rgbOut, 0));
+    jbyte *yuv = (jbyte *) (*env)->GetPrimitiveArrayCritical(env, yuv420sp, 0);
+    nv21_to_rgba((unsigned char *) rgbData, 0xff, (const unsigned char *) yuv, width, height);
+    (*env)->ReleasePrimitiveArrayCritical(env, rgbOut, rgbData, 0);
+    (*env)->ReleasePrimitiveArrayCritical(env, yuv420sp, yuv, 0);
+}
+
+
+
+

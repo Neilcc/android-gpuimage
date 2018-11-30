@@ -24,6 +24,7 @@ import android.hardware.Camera.PreviewCallback;
 import android.hardware.Camera.Size;
 import android.opengl.GLES20;
 import android.opengl.GLSurfaceView;
+import android.util.Log;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -36,6 +37,7 @@ import java.util.Queue;
 import javax.microedition.khronos.egl.EGLConfig;
 import javax.microedition.khronos.opengles.GL10;
 
+import hugo.weaving.DebugLog;
 import jp.co.cyberagent.android.gpuimage.filter.GPUImageFilter;
 import jp.co.cyberagent.android.gpuimage.util.OpenGlUtils;
 import jp.co.cyberagent.android.gpuimage.util.Rotation;
@@ -44,32 +46,27 @@ import jp.co.cyberagent.android.gpuimage.util.TextureRotationUtil;
 import static jp.co.cyberagent.android.gpuimage.util.TextureRotationUtil.TEXTURE_NO_ROTATION;
 
 public class GPUImageRenderer implements GLSurfaceView.Renderer, GLTextureView.Renderer, PreviewCallback {
-    private static final int NO_IMAGE = -1;
     public static final float CUBE[] = {
             -1.0f, -1.0f,
             1.0f, -1.0f,
             -1.0f, 1.0f,
             1.0f, 1.0f,
     };
-
-    private GPUImageFilter filter;
-
+    private static final int NO_IMAGE = -1;
     public final Object surfaceChangedWaiter = new Object();
-
-    private int glTextureId = NO_IMAGE;
-    private SurfaceTexture surfaceTexture = null;
     private final FloatBuffer glCubeBuffer;
     private final FloatBuffer glTextureBuffer;
+    private final Queue<Runnable> runOnDraw;
+    private final Queue<Runnable> runOnDrawEnd;
+    private GPUImageFilter filter;
+    private int glTextureId = NO_IMAGE;
+    private SurfaceTexture surfaceTexture = null;
     private IntBuffer glRgbBuffer;
-
     private int outputWidth;
     private int outputHeight;
     private int imageWidth;
     private int imageHeight;
     private int addedPadding;
-
-    private final Queue<Runnable> runOnDraw;
-    private final Queue<Runnable> runOnDrawEnd;
     private Rotation rotation;
     private boolean flipHorizontal;
     private boolean flipVertical;
@@ -116,10 +113,13 @@ public class GPUImageRenderer implements GLSurfaceView.Renderer, GLTextureView.R
     }
 
     @Override
+    @DebugLog
     public void onDrawFrame(final GL10 gl) {
         GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT | GLES20.GL_DEPTH_BUFFER_BIT);
         runAll(runOnDraw);
+        long time = System.currentTimeMillis();
         filter.onDraw(glTextureId, glCubeBuffer, glTextureBuffer);
+        Log.d("zcc", "draw filter cost : " + (System.currentTimeMillis() - time));
         runAll(runOnDrawEnd);
         if (surfaceTexture != null) {
             surfaceTexture.updateTexImage();
@@ -139,6 +139,7 @@ public class GPUImageRenderer implements GLSurfaceView.Renderer, GLTextureView.R
         backgroundBlue = blue;
     }
 
+    @DebugLog
     private void runAll(Queue<Runnable> queue) {
         synchronized (queue) {
             while (!queue.isEmpty()) {
@@ -161,8 +162,12 @@ public class GPUImageRenderer implements GLSurfaceView.Renderer, GLTextureView.R
             runOnDraw(new Runnable() {
                 @Override
                 public void run() {
-                    GPUImageNativeLibrary.YUVtoRBGA(data, width, height, glRgbBuffer.array());
+                    long time = System.currentTimeMillis();
+                    GPUImageNativeLibrary.YUVtoRGBANEON(data, width, height, glRgbBuffer.array());
+                    Log.d("zcc", "yuv to rgba cost" + (System.currentTimeMillis() - time));
+                    time = System.currentTimeMillis();
                     glTextureId = OpenGlUtils.loadTexture(glRgbBuffer, width, height, glTextureId);
+                    Log.d("zcc", " load to texture cost " + (System.currentTimeMillis() - time));
 
                     if (imageWidth != width) {
                         imageWidth = width;
@@ -323,11 +328,6 @@ public class GPUImageRenderer implements GLSurfaceView.Renderer, GLTextureView.R
         setRotation(rotation, flipVertical, flipHorizontal);
     }
 
-    public void setRotation(final Rotation rotation) {
-        this.rotation = rotation;
-        adjustImageScaling();
-    }
-
     public void setRotation(final Rotation rotation,
                             final boolean flipHorizontal, final boolean flipVertical) {
         this.flipHorizontal = flipHorizontal;
@@ -337,6 +337,11 @@ public class GPUImageRenderer implements GLSurfaceView.Renderer, GLTextureView.R
 
     public Rotation getRotation() {
         return rotation;
+    }
+
+    public void setRotation(final Rotation rotation) {
+        this.rotation = rotation;
+        adjustImageScaling();
     }
 
     public boolean isFlippedHorizontally() {

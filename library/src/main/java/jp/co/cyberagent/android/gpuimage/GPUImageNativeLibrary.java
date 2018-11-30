@@ -28,4 +28,6 @@ public class GPUImageNativeLibrary {
     public static native void YUVtoARBG(byte[] yuv, int width, int height, int[] out);
 
     public static native void adjustBitmap(Bitmap srcBitmap);
+
+    public static native void YUVtoRGBANEON(byte[] yuv, int width, int height, int[] out);
 }
