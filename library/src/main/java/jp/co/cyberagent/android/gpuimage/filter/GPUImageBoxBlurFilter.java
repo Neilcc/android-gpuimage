@@ -16,6 +16,8 @@
 
 package jp.co.cyberagent.android.gpuimage.filter;
 
+import android.opengl.GLES31;
+
 /**
  * A hardware-accelerated 9-hit box blur of an image
  * <p>

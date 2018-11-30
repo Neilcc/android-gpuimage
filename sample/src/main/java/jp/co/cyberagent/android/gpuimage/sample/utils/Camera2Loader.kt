@@ -106,9 +106,9 @@ class Camera2Loader(private val activity: Activity) : CameraLoader() {
 
         try {
             cameraInstance?.createCaptureSession(
-                listOf(imageReader!!.surface),
-                CaptureStateCallback(),
-                null
+                    listOf(imageReader!!.surface),
+                    CaptureStateCallback(),
+                    null
             )
         } catch (e: CameraAccessException) {
             Log.e(TAG, "Failed to start camera session")
@@ -121,15 +121,15 @@ class Camera2Loader(private val activity: Activity) : CameraLoader() {
         }
         val cameraId = getCameraId(cameraFacing) ?: return Size(0, 0)
         val outputSizes = cameraManager.getCameraCharacteristics(cameraId)
-            .get(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP)
-            ?.getOutputSizes(ImageFormat.YUV_420_888)
+                .get(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP)
+                ?.getOutputSizes(ImageFormat.YUV_420_888)
 
         val orientation = getCameraOrientation()
         val maxPreviewWidth = if (orientation == 90 or 270) viewHeight else viewWidth
         val maxPreviewHeight = if (orientation == 90 or 270) viewWidth else viewHeight
 
         return outputSizes?.filter {
-            it.width < maxPreviewWidth / 2 && it.height < maxPreviewHeight / 2
+            it.width < maxPreviewWidth && it.height < maxPreviewHeight
         }?.maxBy {
             it.width * it.height
         } ?: Size(PREVIEW_WIDTH, PREVIEW_HEIGHT)
