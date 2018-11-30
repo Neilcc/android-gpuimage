@@ -1,3 +1,8 @@
+# What do I change?
+
+## Just add Arm neon support for native caculations.
+Refer to this [code](https://github.com/Neilcc/android-gpuimage/blob/master/library/src/main/cpp/yuv2rgb.cpp)
+
 # GPUImage for Android
 [![License](https://img.shields.io/badge/license-Apache%202-blue.svg)](https://www.apache.org/licenses/LICENSE-2.0)
 [![Download](https://api.bintray.com/packages/cats-oss/maven/gpuimage/images/download.svg) ](https://bintray.com/cats-oss/maven/gpuimage/_latestVersion)
